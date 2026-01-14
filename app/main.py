@@ -1,17 +1,19 @@
 from fastapi import FastAPI
-from app.api.routes import router
-from app.core.config import settings
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.routes import router
 
-app = FastAPI(title=settings.APP_NAME)
+app = FastAPI()
+
+# ✅ CORS MUST BE HERE (before include_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://jocular-kelpie-43de9f.netlify.app"
     ],
-    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=False,
 )
 
+# ✅ Router AFTER CORS
 app.include_router(router)
