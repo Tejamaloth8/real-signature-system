@@ -6,6 +6,7 @@ from app.db.deps import get_db
 from app.db.models import User
 from app.core.security import hash_password, verify_password
 from app.services.crypto_service import generate_keypair, create_access_token
+from app.services.file_crypto import generate_aes_key   # ✅ IMPORT FIX
 
 router = APIRouter()
 
@@ -31,13 +32,14 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
 
     password_hash = hash_password(data.password)
     private_key, public_key = generate_keypair()
+    aes_key = generate_aes_key()   # ✅ VALID AES KEY (FIX)
 
     user = User(
         email=data.email,
         password_hash=password_hash,
         private_key_enc=private_key,
         public_key=public_key,
-        aes_key=b"temp_aes_key"
+        aes_key=aes_key              # ✅ FIXED
     )
 
     db.add(user)
