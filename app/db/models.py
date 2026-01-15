@@ -38,7 +38,6 @@ class Signature(Base):
     __tablename__ = "signatures"
 
     id = Column(Integer, primary_key=True, index=True)
-
     document_id = Column(Integer, ForeignKey("documents.id"))
     signer_id = Column(Integer, ForeignKey("users.id"))
 
