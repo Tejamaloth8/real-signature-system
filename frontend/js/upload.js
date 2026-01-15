@@ -1,13 +1,30 @@
 const API = "https://real-signature-system.onrender.com";
-const token = localStorage.getItem("token");
-
-// Store document ID globally after upload
 let uploadedDocumentId = null;
 
-function upload() {
+/* ---------------------------
+   Helper: get token safely
+---------------------------- */
+function getTokenOrRedirect() {
+    const token = localStorage.getItem("token");
+
+    if (!token || token === "undefined" || token === "null") {
+        alert("Session expired. Please login again.");
+        window.location.href = "index.html";
+        return null;
+    }
+    return token;
+}
+
+/* ---------------------------
+   Upload file
+---------------------------- */
+async function upload() {
+    const token = getTokenOrRedirect();
+    if (!token) return;
+
     const fileInput = document.getElementById("file");
 
-    if (!fileInput.files.length) {
+    if (!fileInput || !fileInput.files.length) {
         alert("Please choose a file first");
         return;
     }
@@ -15,52 +32,69 @@ function upload() {
     const form = new FormData();
     form.append("file", fileInput.files[0]);
 
-    fetch(`${API}/upload`, {
-        method: "POST",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
-        body: form
-    })
-    .then(res => {
+    try {
+        const res = await fetch(`${API}/upload`, {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + token
+            },
+            body: form
+        });
+
         if (!res.ok) {
-            throw new Error("Upload failed");
+            // Read backend error message if present
+            let msg = "Upload failed";
+            try {
+                const err = await res.json();
+                msg = err.detail || msg;
+            } catch {}
+            throw new Error(msg);
         }
-        return res.json();
-    })
-    .then(data => {
+
+        const data = await res.json();
         uploadedDocumentId = data.document_id;
-        alert("Uploaded successfully.\nDocument ID: " + uploadedDocumentId);
-    })
-    .catch(err => {
-        console.error(err);
-        alert("Upload error. Check console.");
-    });
+
+        alert(`Uploaded successfully.\nDocument ID: ${uploadedDocumentId}`);
+
+    } catch (err) {
+        console.error("UPLOAD ERROR:", err);
+        alert("Upload error: " + err.message);
+    }
 }
 
-function sign() {
+/* ---------------------------
+   Sign document
+---------------------------- */
+async function sign() {
+    const token = getTokenOrRedirect();
+    if (!token) return;
+
     if (!uploadedDocumentId) {
         alert("Please upload a document first");
         return;
     }
 
-    fetch(`${API}/sign/${uploadedDocumentId}`, {
-        method: "POST",
-        headers: {
-            "Authorization": "Bearer " + token
-        }
-    })
-    .then(res => {
+    try {
+        const res = await fetch(`${API}/sign/${uploadedDocumentId}`, {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        });
+
         if (!res.ok) {
-            throw new Error("Sign failed");
+            let msg = "Sign failed";
+            try {
+                const err = await res.json();
+                msg = err.detail || msg;
+            } catch {}
+            throw new Error(msg);
         }
-        return res.json();
-    })
-    .then(data => {
+
         alert("Document signed successfully");
-    })
-    .catch(err => {
-        console.error(err);
-        alert("Sign error. Check console.");
-    });
+
+    } catch (err) {
+        console.error("SIGN ERROR:", err);
+        alert("Sign error: " + err.message);
+    }
 }
